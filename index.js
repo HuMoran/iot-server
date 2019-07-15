@@ -34,8 +34,8 @@ function heartbeat() {
 
 function getCheckCode(str) {
   let sum = 0;
-  for (let i = 0; i < str.length - 2; i += 2) {
-    sum += parseInt(str.slice(i, i + 2), 10);
+  for (let i = 0; i < str.length; i += 2) {
+    sum += parseInt(str.slice(i, i + 2), 16);
   }
   return sum.toString(16).slice(-2).padStart(2, '0');
 }
@@ -44,13 +44,13 @@ function doMsg(msg, ip, port) {
   if (msg === '74696d653f') { // 查询时间
     const time = dayjs().format('YY/MM/DD HH:mm:ss');
     const week = dayjs().day() === 0 ? 7 : dayjs().day();
-    const strHex = Buffer.from(`${time} ${week}`).toString('hex');
+    const strHex = Buffer.from(`now:${time.replace(/ /g, '')} ${week}`).toString('hex');
     const code = getCheckCode(strHex);
     // console.log(`${new Date().toLocaleString()} 终端时间查询处理请求完成`);
     return `${strHex}${code}`;
   }
   const msgType = msg[0];
-  
+
   switch (msgType) {
     case '0': { // 登录注册或者心跳
       if (msg[1] === '0') { // 心跳
@@ -79,6 +79,12 @@ function doMsg(msg, ip, port) {
       }
       console.log(`${new Date().toLocaleString()} ${id} 登录处理完成`);
       return '00';
+    }
+    case '4': { // 上报的信息
+      const idLen = msg[1];
+      const id = msg.slice(2, (idLen + 1) * 2);
+      const data = msg.slice((idLen + 1) * 2);
+      const [id2, content] = data.split('ff');
     }
     default:
       break;
@@ -120,7 +126,7 @@ server.on('listening', () => {
 server.bind(60000);
 
 // // 市电关
-// 440000000f5e02753565ad7535ff010020002800300034002f00300031002f00300031002c00310034003a00300036003a0031003300293f
+// 440000000f 5e02753565ad7535 ff 010020002800300034002f00300031002f00300031002c00310034003a00300036003a0031003300293f
 // 40ee3537303135303030374071712e636f6d2c5e02753565ad7535ff01da
 
 // // 市电开
